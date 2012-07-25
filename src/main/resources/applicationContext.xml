@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jee="http://www.springframework.org/schema/jee"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-3.0.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd"
+	default-lazy-init="true">
+
+	<description>Spring公共配置文件 </description>
+	<!-- 以静态变量保存ApplicationContext -->
+	<bean class="org.springside.modules.utils.spring.SpringContextHolder"
+		lazy-init="false" />
+
+	<!-- 定义易受环境影响的变量 -->
+	<bean
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE" />
+		<property name="ignoreResourceNotFound" value="true" />
+		<property name="locations">
+			<list>
+				<!-- 测试环境下的标准配置生命周期只在测试范畴 -->
+				<value>classpath*:/application-test.properties</value>
+			</list>
+		</property>
+	</bean>
+
+	<!-- 使用annotation 自动注册bean,并保证@Required,@Autowired的属性被注入 -->
+	<context:component-scan base-package="com.shsz.jpa" />
+
+	<!-- masterDatasourceIvp not use Amoeba DataSource for JTA,Because Amoeba 
+		not support Transaction -->
+	<bean id="masterDatasourceWyh" class="com.atomikos.jdbc.AtomikosDataSourceBean"
+		init-method="init" destroy-method="close">
+		<property name="uniqueResourceName" value="jta_ivp" />
+		<property name="xaDataSourceClassName"
+			value="com.mysql.jdbc.jdbc2.optional.MysqlXADataSource" />
+		<property name="xaProperties">
+			<props>
+				<prop key="user">${jdbc.username}</prop>
+				<prop key="password">${jdbc.password}</prop>
+				<prop key="URL">${jdbc.url}</prop>
+			</props>
+		</property>
+		<property name="minPoolSize" value="6" />
+		<property name="maxPoolSize" value="30" />
+		<property name="testQuery" value="select 1" />
+	</bean>
+
+	<!-- configure Hibernate to use the Atomikos JTA and datasource for transaction 
+		control -->
+	<bean id="sessionFactoryWyh"
+		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+		<!-- make sure that hibernate uses the Atomikos datasource (JTA enabled)! -->
+		<property name="dataSource">
+			<ref bean="masterDatasourceWyh" />
+		</property>
+
+		<!-- configure hibernate to use Atomikos TransactionsEssentials -->
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.transaction.factory_class">
+					com.atomikos.icatch.jta.hibernate3.AtomikosJTATransactionFactory
+				</prop>
+				<prop key="hibernate.transaction.manager_lookup_class">
+					com.atomikos.icatch.jta.hibernate3.TransactionManagerLookup
+				</prop>
+				<prop key="hibernate.dialect">${hibernate.dialect}</prop>
+				<prop key="hibernate.show_sql">${hibernate.show_sql}</prop>
+				<prop key="hibernate.format_sql">${hibernate.format_sql}</prop>
+				<!-- for hibernate 2, use the following: <prop key="hibernate.transaction.manager_lookup_class"> 
+					com.atomikos.icatch.jta.hibernate.TransactionManagerLookup </prop> -->
+				<!-- add any other hibernate properties you need -->
+
+			</props>
+		</property>
+		<!-- 配置自动扫描注解hibernate级别 -->
+		<property name="packagesToScan" value="com.shsz.jpa.manage.entity" />
+	</bean>
+
+
+
+
+	<!-- DISCUZ not use amoeba,So it Support Transaction -->
+	<bean id="masterDatasourceWyh1" class="com.atomikos.jdbc.AtomikosDataSourceBean"
+		init-method="init" destroy-method="close">
+		<property name="uniqueResourceName" value="jta_dz" />
+		<property name="xaDataSourceClassName"
+			value="com.mysql.jdbc.jdbc2.optional.MysqlXADataSource" />
+		<property name="xaProperties">
+			<props>
+				<prop key="user">${jdbc.username}</prop>
+				<prop key="password">${jdbc.password}</prop>
+				<prop key="URL">${jdbc.url}</prop>
+			</props>
+		</property>
+		<property name="minPoolSize" value="6" />
+		<property name="maxPoolSize" value="30" />
+		<property name="testQuery" value="select 1" />
+	</bean>
+
+
+	<!-- configure Hibernate to use the Atomikos JTA and datasource for transaction 
+		control -->
+	<bean id="sessionFactoryWyh1"
+		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+		<!-- make sure that hibernate uses the Atomikos datasource (JTA enabled)! -->
+		<property name="dataSource">
+			<ref bean="masterDatasourceWyh1" />
+		</property>
+
+		<!-- configure hibernate to use Atomikos TransactionsEssentials -->
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.transaction.factory_class">
+					com.atomikos.icatch.jta.hibernate3.AtomikosJTATransactionFactory
+				</prop>
+				<prop key="hibernate.transaction.manager_lookup_class">
+					com.atomikos.icatch.jta.hibernate3.TransactionManagerLookup
+				</prop>
+				<prop key="hibernate.dialect">${hibernate.dialect}</prop>
+				<prop key="hibernate.show_sql">${hibernate.show_sql}</prop>
+				<prop key="hibernate.format_sql">${hibernate.format_sql}</prop>
+				<!-- for hibernate 2, use the following: <prop key="hibernate.transaction.manager_lookup_class"> 
+					com.atomikos.icatch.jta.hibernate.TransactionManagerLookup </prop> -->
+				<!-- add any other hibernate properties you need -->
+
+			</props>
+		</property>
+		<!-- 配置自动扫描注解hibernate级别 -->
+		<property name="packagesToScan" value="com.shsz.jpa.manage.entity" />
+	</bean>
+
+
+	<bean id="userTransaction" class="com.atomikos.icatch.jta.UserTransactionImp">
+		<property name="transactionTimeout" value="300" />
+	</bean>
+
+	<bean id="userTransactionManager" class="com.atomikos.icatch.jta.UserTransactionManager"
+		init-method="init" destroy-method="close">
+		<property name="forceShutdown" value="true" />
+	</bean>
+
+	<bean id="jtaTransactionManager"
+		class="org.springframework.transaction.jta.JtaTransactionManager">
+		<property name="transactionManager" ref="userTransactionManager" />
+		<property name="userTransaction" ref="userTransaction" />
+		<property name="allowCustomIsolationLevels" value="true" />
+		<qualifier value="jta" />
+	</bean>
+
+	<tx:annotation-driven transaction-manager="jtaTransactionManager" />
+<!-- ****************以上为JTA专用 *********************************************************-->
+	 <!-- 数据源配置, 使用应用中的DBCP数据库连接池 -->
+	<!-- **********************第一个数据源配置***************************** -->
+	<bean id="dataSource" class="com.jolbox.bonecp.BoneCPDataSource"
+		destroy-method="close">
+		<!-- Connection Info -->
+		<property name="driverClass" value="${jdbc.driver}" />
+		<property name="jdbcUrl" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+		<property name="maxConnectionsPerPartition" value="20" />
+		<!-- Connection Pooling Info 配置连接池的一些相关参数 -->
+
+	</bean>
+	<!-- Hibernate配置 -->
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">${hibernate.dialect}</prop>
+				<prop key="hibernate.show_sql">${hibernate.show_sql}</prop>
+				<prop key="hibernate.format_sql">${hibernate.format_sql}</prop>
+				<!--<prop key="hibernate.cache.provider_class">org.hibernate.cache.EhCacheProvider</prop> 
+					<prop key="hibernate.cache.provider_configuration_file_resource_path">ehcache/ehcache-hibernate-local.xml</prop> -->
+			</props>
+		</property>
+		<property name="packagesToScan" value="com.shsz.jxet.manage.entity" />
+	</bean>
+
+	<!-- 事务管理器配置,单数据源事务 -->
+	<bean id="transactionManager"
+		class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+
+	<!-- 使用annotation定义事务 -->
+	<tx:annotation-driven transaction-manager="transactionManager"
+		proxy-target-class="true" />
+		
+		<!-- **********************第二个数据源配置***************************** -->
+	<bean id="dataSource2" class="com.jolbox.bonecp.BoneCPDataSource"
+		destroy-method="close">
+		<!-- Connection Info -->
+		<property name="driverClass" value="${jdbc.driver}" />
+		<property name="jdbcUrl" value="${jdbc1.url}" />
+		<property name="username" value="${jdbc1.username}" />
+		<property name="password" value="${jdbc1.password}" />
+		<property name="maxConnectionsPerPartition" value="20" />
+		<!-- Connection Pooling Info 配置连接池的一些相关参数 -->
+
+	</bean>
+	<!-- Hibernate配置 -->
+	<bean id="sessionFactory2"
+		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+		<property name="dataSource" ref="dataSource2" />
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">${hibernate.dialect}</prop>
+				<prop key="hibernate.show_sql">${hibernate.show_sql}</prop>
+				<prop key="hibernate.format_sql">${hibernate.format_sql}</prop>
+				<!--<prop key="hibernate.cache.provider_class">org.hibernate.cache.EhCacheProvider</prop> 
+					<prop key="hibernate.cache.provider_configuration_file_resource_path">ehcache/ehcache-hibernate-local.xml</prop> -->
+			</props>
+		</property>
+		<property name="packagesToScan" value="com.shsz.jxet.manage.entity" />
+	</bean>
+
+	<!-- 事务管理器配置,单数据源事务 -->
+	<bean id="transactionManager2"
+		class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory2" />
+	</bean>
+
+	<!-- 使用annotation定义事务 -->
+	<tx:annotation-driven transaction-manager="transactionManager2"
+		proxy-target-class="true" />
+</beans>
